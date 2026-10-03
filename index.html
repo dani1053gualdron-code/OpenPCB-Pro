@@ -1,0 +1,929 @@
+<!--
+MIT License
+
+Copyright (c) 2026 Danilo Gualdron Avila
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OpenPCB Designer Pro - Industrial & DRC Edition</title>
+
+    <!-- Configuración para App Independiente (PWA & Desktop App) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OpenPCB Pro">
+    <meta name="theme-color" content="#0d1117">
+
+    <!-- Logo Vectorial Dinámico Entrelazado (OPB / OpenPCB Loop Style) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2300f2fe'/><stop offset='100%25' stop-color='%234facfe'/></linearGradient><linearGradient id='grad2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2310b981'/><stop offset='100%25' stop-color='%23059669'/></linearGradient></defs><rect width='512' height='512' rx='110' fill='%230d1117'/><path d='M110 256c0-49.7 40.3-90 90-90h40c49.7 0 90 40.3 90 90s-40.3 90-90 90h-40c-49.7 0-90-40.3-90-90z' fill='none' stroke='url(%23grad)' stroke-width='38' stroke-linecap='round'/><path d='M272 256c0-49.7 40.3-90 90-90h40c49.7 0 90 40.3 90 90s-40.3 90-90 90h-40c-49.7 0-90-40.3-90-90z' fill='none' stroke='url(%23grad2)' stroke-width='38' stroke-linecap='round'/><circle cx='200' cy='256' r='18' fill='%2300f2fe'/><circle cx='362' cy='256' r='18' fill='%2310b981'/><path d='M140 166l-30-30M372 346l30 30' stroke='%2300f2fe' stroke-width='16' stroke-linecap='round'/></svg>">
+    
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2300f2fe'/><stop offset='100%25' stop-color='%234facfe'/></linearGradient><linearGradient id='grad2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2310b981'/><stop offset='100%25' stop-color='%23059669'/></linearGradient></defs><rect width='512' height='512' rx='110' fill='%230d1117'/><path d='M110 256c0-49.7 40.3-90 90-90h40c49.7 0 90 40.3 90 90s-40.3 90-90 90h-40c-49.7 0-90-40.3-90-90z' fill='none' stroke='url(%23grad)' stroke-width='38' stroke-linecap='round'/><path d='M272 256c0-49.7 40.3-90 90-90h40c49.7 0 90 40.3 90 90s-40.3 90-90 90h-40c-49.7 0-90-40.3-90-90z' fill='none' stroke='url(%23grad2)' stroke-width='38' stroke-linecap='round'/><circle cx='200' cy='256' r='18' fill='%2300f2fe'/><circle cx='362' cy='256' r='18' fill='%2310b981'/><path d='M140 166l-30-30M372 346l30 30' stroke='%2300f2fe' stroke-width='16' stroke-linecap='round'/></svg>">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f1115;
+            --panel-bg: #181b21;
+            --border-color: #2a2e39;
+            --accent-color: #10b981;
+            --accent-hover: #059669;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --layer-top: #ef4444;
+            --layer-bottom: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 55px;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            vertical-align: middle;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, #00f2fe, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge-open-source {
+            font-size: 0.68rem;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            padding: 2px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            text-transform: uppercase;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        button, select.layer-select {
+            background-color: #242832;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        button:hover, select.layer-select:hover {
+            background-color: #313644;
+            border-color: #4b5265;
+        }
+
+        button.active {
+            background-color: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+        }
+
+        button.danger {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .layer-select {
+            font-weight: bold;
+            outline: none;
+        }
+
+        .layer-top-active {
+            border-color: var(--layer-top) !important;
+            color: #fca5a5 !important;
+        }
+
+        .layer-bottom-active {
+            border-color: var(--layer-bottom) !important;
+            color: #93c5fd !important;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        sidebar {
+            width: 310px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .inspector-panel {
+            width: 280px;
+            background-color: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .section-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .comp-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .comp-item {
+            background: #20242e;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-size: 0.82rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .comp-item:hover {
+            border-color: var(--accent-color);
+            background: #282d3a;
+        }
+
+        .calc-box {
+            background: #20242e;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #2d3342;
+        }
+
+        .calc-box h4 {
+            color: var(--accent-color);
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+        }
+
+        label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            display: block;
+            margin-top: 5px;
+        }
+
+        input, select {
+            width: 100%;
+            background: #12141a;
+            border: 1px solid #323847;
+            color: #fff;
+            padding: 5px;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-top: 2px;
+            font-size: 0.8rem;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            background-color: #0b0c0f;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #view-3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            z-index: 20;
+            background-color: #050508;
+        }
+
+        footer {
+            background-color: var(--panel-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 6px 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .status-info {
+            display: flex;
+            gap: 15px;
+        }
+
+        .drc-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .drc-ok { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .drc-error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <svg class="logo-icon" viewBox="0 0 512 512">
+                <defs>
+                    <linearGradient id="grad-head" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00f2fe"/>
+                        <stop offset="100%" stop-color="#4facfe"/>
+                    </linearGradient>
+                    <linearGradient id="grad2-head" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10b981"/>
+                        <stop offset="100%" stop-color="#059669"/>
+                    </linearGradient>
+                </defs>
+                <path d="M110 256c0-49.7 40.3-90 90-90h40c49.7 0 90 40.3 90 90s-40.3 90-90 90h-40c-49.7 0-90-40.3-90-90z" fill="none" stroke="url(#grad-head)" stroke-width="40" stroke-linecap="round"/>
+                <path d="M272 256c0-49.7 40.3-90 90-90h40c49.7 0 90 40.3 90 90s-40.3 90-90 90h-40c-49.7 0-90-40.3-90-90z" fill="none" stroke="url(#grad2-head)" stroke-width="40" stroke-linecap="round"/>
+                <circle cx="200" cy="256" r="20" fill="#00f2fe"/>
+                <circle cx="362" cy="256" r="20" fill="#10b981"/>
+            </svg>
+            <span>OpenPCB Designer Pro</span>
+            <span class="badge-open-source">Licencia MIT Libre</span>
+        </div>
+        <div class="toolbar">
+            <button id="btn-select" class="active" onclick="setMode('select')">🖐 Seleccionar</button>
+            <button id="btn-wire" onclick="setMode('wire')">⚡ Rutar Pista 45°</button>
+            
+            <select id="layer-select" class="layer-select layer-top-active" onchange="changeLayer(this.value)">
+                <option value="top">🔴 Capa Top (Cobre Superior)</option>
+                <option value="bottom">🔵 Capa Bottom (Cobre Inferior)</option>
+            </select>
+
+            <button onclick="rotateSelected()">🔄 Rotar (R)</button>
+            <button onclick="runDRCCheck()" class="danger">🔍 Validar DRC</button>
+            <button onclick="deleteSelected()">🗑️ Borrar</button>
+            <button onclick="toggle3D()" id="btn-3d">🧊 Vista 3D</button>
+            <button onclick="exportGerber()">🏭 Exportar Gerber</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <sidebar>
+            <div class="calc-box">
+                <h4>🧮 Motor Ancho IPC-2221</h4>
+                <label>Corriente Máx (A):</label>
+                <input type="number" id="current-input" value="1.5" step="0.1">
+                <label>Grosor Cobre (oz/ft²):</label>
+                <input type="number" id="copper-thick" value="1">
+                <label>Elevación Temp. (°C):</label>
+                <input type="number" id="temp-rise" value="10">
+                <button style="margin-top:8px; width:100%" onclick="calcIPC2221()">Calcular Ancho</button>
+                <div id="calc-result" style="margin-top:6px; font-size:0.75rem; color:#10b981; font-weight:bold;"></div>
+            </div>
+
+            <div>
+                <div class="section-title">Microcontroladores</div>
+                <div class="comp-list">
+                    <div class="comp-item" onclick="addComponent('ESP32_WROOM')">ESP32-WROOM <span>38p Pinout</span></div>
+                    <div class="comp-item" onclick="addComponent('NANO')">Arduino Nano <span>30p</span></div>
+                    <div class="comp-item" onclick="addComponent('ATMEGA328')">ATmega328P DIP <span>28p</span></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">Potencia & Control de Motores</div>
+                <div class="comp-list">
+                    <div class="comp-item" onclick="addComponent('L298N_MINI')">Puente H L298N <span>Dual Motor</span></div>
+                    <div class="comp-item" onclick="addComponent('A4988')">Driver A4988 <span>Stepper</span></div>
+                    <div class="comp-item" onclick="addComponent('SCREW_TERMINAL_2P')">Bornera 2P <span>Alimentación</span></div>
+                    <div class="comp-item" onclick="addComponent('SERVO_HEADER')">Header Servo <span>3 Pin PWM</span></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">Pasivos & Reguladores</div>
+                <div class="comp-list">
+                    <div class="comp-item" onclick="addComponent('RESISTOR')">Resistencia Axial <span>THT</span></div>
+                    <div class="comp-item" onclick="addComponent('CAPACITOR')">Capacitor Elec. <span>THT</span></div>
+                    <div class="comp-item" onclick="addComponent('LED')">LED 5mm <span>Diodo</span></div>
+                    <div class="comp-item" onclick="addComponent('AMS1117')">Regulador AMS1117 <span>SOT-223</span></div>
+                </div>
+            </div>
+        </sidebar>
+
+        <div id="canvas-container">
+            <canvas id="pcbCanvas"></canvas>
+            <div id="view-3d"></div>
+        </div>
+
+        <div class="inspector-panel">
+            <div class="section-title">Inspector PCB</div>
+            <div id="inspector-content">
+                <p style="font-size:0.8rem; color:var(--text-muted)">Selecciona un componente o pista para ajustar sus parámetros físicos y eléctricos.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div>Software Libre y Gratuito creado por Danilo Gualdron Avila bajo Licencia MIT.</div>
+        <div class="status-info">
+            <span>DRC: <span id="drc-status-badge" class="drc-badge drc-ok">SISTEMA OK</span></span>
+            <span>Posición: <strong id="pos-info">X: 0, Y: 0</strong></span>
+            <span>Errores DRC: <strong id="drc-count" style="color:#10b981;">0</strong></span>
+        </div>
+    </footer>
+
+    <script>
+        const COMPONENT_DATABASE = {
+            'ESP32_WROOM': { 
+                name: 'ESP32-WROOM-32', w: 120, h: 220, pkg: 'SMD-Module',
+                pinLabelsLeft: ['3V3', 'EN', 'VP', 'VN', 'G34', 'G35', 'G32', 'G33', 'G25', 'G26', 'G27', 'G14', 'G12', 'G13', 'GND', 'VIN'],
+                pinLabelsRight: ['GND', 'TX0', 'RX0', 'G22', 'G21', 'G19', 'G18', 'G5', 'G17', 'G16', 'G4', 'G0', 'G2', 'G15', 'SD1', 'SD0']
+            },
+            'L298N_MINI': {
+                name: 'Puente H L298N', w: 140, h: 140, pkg: 'Motor-Driver',
+                pinLabelsLeft: ['IN1', 'IN2', 'IN3', 'IN4'],
+                pinLabelsRight: ['OUT1', 'OUT2', 'OUT3', 'OUT4'],
+                pinLabelsBottom: ['GND', 'VCC', '5V']
+            },
+            'A4988': {
+                name: 'Driver A4988', w: 90, h: 130, pkg: 'Stepper-Driver',
+                pinLabelsLeft: ['ENABLE', 'MS1', 'MS2', 'MS3', 'RESET', 'SLEEP', 'STEP', 'DIR'],
+                pinLabelsRight: ['GND', 'VDD', '1B', '1A', '2A', '2B', 'GND', 'VMOT']
+            },
+            'SCREW_TERMINAL_2P': {
+                name: 'Bornera 2P', w: 60, h: 50, pkg: 'Terminal-Block',
+                pinLabelsLeft: ['V+', 'GND']
+            },
+            'SERVO_HEADER': {
+                name: 'Header Servo', w: 40, h: 60, pkg: 'Header-3P',
+                pinLabelsLeft: ['GND', 'VCC', 'PWM']
+            },
+            'NANO': { 
+                name: 'Arduino Nano', w: 80, h: 160, pkg: 'DIP-30',
+                pinLabelsLeft: ['D13', '3V3', 'REF', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', '5V', 'RST', 'GND', 'VIN'],
+                pinLabelsRight: ['D12', 'D11', 'D10', 'D9', 'D8', 'D7', 'D6', 'D5', 'D4', 'D3', 'D2', 'GND', 'RST', 'RX0', 'TX1']
+            },
+            'ATMEGA328': { name: 'ATmega328P DIP', w: 60, h: 130, pins: 28, pkg: 'DIP-28' },
+            'AMS1117': { name: 'Reg. AMS1117', w: 50, h: 50, pins: 4, pkg: 'SOT-223', pinLabelsLeft: ['GND', 'OUT', 'IN', 'TAB'] },
+            'RESISTOR': { name: 'Resistencia', w: 60, h: 25, pins: 2, pkg: 'Axial-THT', value: '10k Ω' },
+            'CAPACITOR': { name: 'Capacitor', w: 45, h: 45, pins: 2, pkg: 'Radial-THT', value: '100uF' },
+            'LED': { name: 'LED 5mm', w: 35, h: 35, pins: 2, pkg: 'THT-5mm', value: 'Rojo' }
+        };
+
+        const canvas = document.getElementById('pcbCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvas-container');
+
+        let mode = 'select';
+        let currentLayer = 'top';
+        let components = [];
+        let wires = [];
+        let drcErrors = [];
+        let selectedComp = null;
+        let selectedWire = null;
+        let isWiring = false;
+        let wireStartPad = null;
+        let mousePos = { x: 0, y: 0 };
+        let activeSnapPad = null;
+        let is3D = false;
+
+        const GRID_SIZE = 20;
+        const MIN_CLEARANCE = 15;
+        const SNAP_RADIUS = 14;
+
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            draw();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function changeLayer(layer) {
+            currentLayer = layer;
+            const selectEl = document.getElementById('layer-select');
+            if (layer === 'top') {
+                selectEl.className = 'layer-select layer-top-active';
+            } else {
+                selectEl.className = 'layer-select layer-bottom-active';
+            }
+        }
+
+        function calcIPC2221() {
+            const I = parseFloat(document.getElementById('current-input').value);
+            const dT = parseFloat(document.getElementById('temp-rise').value);
+            const oz = parseFloat(document.getElementById('copper-thick').value);
+            if (!I || !dT || !oz) return;
+            const k = 0.048;
+            const areaMils2 = Math.pow(I / (k * Math.pow(dT, 0.44)), 1 / 0.725);
+            const widthMM = (areaMils2 / (oz * 1.378)) * 0.0254;
+            document.getElementById('calc-result').innerHTML = `Ancho Mínimo: ${widthMM.toFixed(2)} mm`;
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#14171f';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += GRID_SIZE) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += GRID_SIZE) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+        }
+
+        function getAllPadsAbsolute() {
+            let pads = [];
+            components.forEach(comp => {
+                const rad = (comp.rotation || 0) * Math.PI / 180;
+                const cos = Math.cos(rad);
+                const sin = Math.sin(rad);
+
+                comp.pads.forEach(p => {
+                    const absX = comp.x + (p.relX * cos - p.relY * sin);
+                    const absY = comp.y + (p.relX * sin + p.relY * cos);
+                    pads.push({ x: absX, y: absY, label: p.label, parent: comp });
+                });
+            });
+            return pads;
+        }
+
+        function findNearestPad(pos) {
+            const pads = getAllPadsAbsolute();
+            for (let p of pads) {
+                if (Math.hypot(p.x - pos.x, p.y - pos.y) <= SNAP_RADIUS) {
+                    return p;
+                }
+            }
+            return null;
+        }
+
+        function calculate45Route(p1, p2) {
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+
+            let midX, midY;
+            if (absDx > absDy) {
+                midX = p1.x + Math.sign(dx) * (absDx - absDy);
+                midY = p2.y;
+            } else {
+                midX = p2.x;
+                midY = p1.y + Math.sign(dy) * (absDy - absDx);
+            }
+            return [p1, { x: midX, y: midY }, p2];
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+
+            wires.forEach(w => {
+                const pts = calculate45Route({ x: w.x1, y: w.y1 }, { x: w.x2, y: w.y2 });
+                ctx.strokeStyle = (w === selectedWire) ? '#60a5fa' : (w.layer === 'bottom' ? '#3b82f6' : '#ef4444');
+                ctx.lineWidth = w.width || 4;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x, pts[0].y);
+                ctx.lineTo(pts[1].x, pts[1].y);
+                ctx.lineTo(pts[2].x, pts[2].y);
+                ctx.stroke();
+            });
+
+            if (isWiring && wireStartPad) {
+                const targetPos = activeSnapPad ? { x: activeSnapPad.x, y: activeSnapPad.y } : mousePos;
+                const pts = calculate45Route(wireStartPad, targetPos);
+                ctx.strokeStyle = currentLayer === 'top' ? '#f87171' : '#60a5fa';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x, pts[0].y);
+                ctx.lineTo(pts[1].x, pts[1].y);
+                ctx.lineTo(pts[2].x, pts[2].y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            components.forEach(comp => {
+                ctx.save();
+                ctx.translate(comp.x, comp.y);
+                ctx.rotate((comp.rotation || 0) * Math.PI / 180);
+
+                const isSelected = comp === selectedComp;
+                
+                ctx.fillStyle = isSelected ? '#1e3a8a' : '#1e293b';
+                ctx.strokeStyle = isSelected ? '#60a5fa' : '#475569';
+                ctx.lineWidth = 2;
+                ctx.fillRect(-comp.w / 2, -comp.h / 2, comp.w, comp.h);
+                ctx.strokeRect(-comp.w / 2, -comp.h / 2, comp.w, comp.h);
+
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(-comp.w / 2 + 8, -comp.h / 2 + 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(comp.name, 0, -comp.h / 2 + 15);
+
+                comp.pads.forEach(p => {
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.strokeStyle = '#b45309';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(p.relX, p.relY, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    if (p.label) {
+                        ctx.fillStyle = '#94a3b8';
+                        ctx.font = 'bold 8px monospace';
+                        if (p.relX < 0) {
+                            ctx.textAlign = 'left';
+                            ctx.fillText(p.label, p.relX + 10, p.relY + 3);
+                        } else if (p.relX > 0) {
+                            ctx.textAlign = 'right';
+                            ctx.fillText(p.label, p.relX - 10, p.relY + 3);
+                        } else {
+                            ctx.textAlign = 'center';
+                            ctx.fillText(p.label, p.relX, p.relY - 9);
+                        }
+                    }
+                });
+
+                ctx.restore();
+            });
+
+            if (activeSnapPad) {
+                ctx.strokeStyle = '#06b6d4';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(activeSnapPad.x, activeSnapPad.y, 9, 0, Math.PI * 2);
+                ctx.stroke();
+
+                if (activeSnapPad.label) {
+                    ctx.fillStyle = '#06b6d4';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText(activeSnapPad.label, activeSnapPad.x + 12, activeSnapPad.y - 12);
+                }
+            }
+
+            drcErrors.forEach(err => {
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(err.x, err.y, 14, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+        }
+
+        function runDRCCheck() {
+            drcErrors = [];
+
+            for (let i = 0; i < components.length; i++) {
+                for (let j = i + 1; j < components.length; j++) {
+                    const c1 = components[i];
+                    const c2 = components[j];
+                    const dist = Math.hypot(c1.x - c2.x, c1.y - c2.y);
+                    if (dist < MIN_CLEARANCE + Math.max(c1.w, c2.w) / 2) {
+                        drcErrors.push({ x: (c1.x + c2.x) / 2, y: (c1.y + c2.y) / 2, msg: 'Clearance violado' });
+                    }
+                }
+            }
+
+            const badge = document.getElementById('drc-status-badge');
+            const countLabel = document.getElementById('drc-count');
+            countLabel.innerText = drcErrors.length;
+
+            if (drcErrors.length === 0) {
+                badge.className = "drc-badge drc-ok";
+                badge.innerText = "SISTEMA OK";
+            } else {
+                badge.className = "drc-badge drc-error";
+                badge.innerText = "ERRORES DRC DETECTADOS";
+            }
+            draw();
+        }
+
+        function updateInspector() {
+            const panel = document.getElementById('inspector-content');
+            if (selectedComp) {
+                panel.innerHTML = `
+                    <label>Nombre Componente:</label>
+                    <input type="text" value="${selectedComp.name}" onchange="selectedComp.name=this.value; draw();">
+                    <label>Encapsulado:</label>
+                    <input type="text" value="${selectedComp.pkg}" disabled>
+                    <label>Valor / Parámetro:</label>
+                    <input type="text" value="${selectedComp.value || 'N/A'}" onchange="selectedComp.value=this.value;">
+                    <label>Rotación (°):</label>
+                    <input type="number" value="${selectedComp.rotation || 0}" onchange="selectedComp.rotation=parseInt(this.value); draw();">
+                `;
+            } else if (selectedWire) {
+                panel.innerHTML = `
+                    <label>Ancho Pista (px / mils):</label>
+                    <input type="number" value="${selectedWire.width || 4}" onchange="selectedWire.width=parseInt(this.value); draw();">
+                    <label>Capa de Cobre:</label>
+                    <select onchange="selectedWire.layer=this.value; draw();">
+                        <option value="top" ${selectedWire.layer === 'top' ? 'selected' : ''}>🔴 Top Copper</option>
+                        <option value="bottom" ${selectedWire.layer === 'bottom' ? 'selected' : ''}>🔵 Bottom Copper</option>
+                    </select>
+                    <label>Net Name (Nodo):</label>
+                    <input type="text" value="${selectedWire.net || 'NET_001'}" onchange="selectedWire.net=this.value;">
+                `;
+            } else {
+                panel.innerHTML = `<p style="font-size:0.8rem; color:var(--text-muted)">Selecciona un componente o pista para ver sus propiedades.</p>`;
+            }
+        }
+
+        function addComponent(typeKey) {
+            const spec = COMPONENT_DATABASE[typeKey];
+            if (!spec) return;
+
+            let comp = {
+                x: Math.round((canvas.width / 2) / GRID_SIZE) * GRID_SIZE,
+                y: Math.round((canvas.height / 2) / GRID_SIZE) * GRID_SIZE,
+                w: spec.w,
+                h: spec.h,
+                name: spec.name,
+                pkg: spec.pkg,
+                value: spec.value || '',
+                rotation: 0,
+                pads: []
+            };
+
+            if (spec.pinLabelsLeft || spec.pinLabelsRight) {
+                const leftList = spec.pinLabelsLeft || [];
+                const rightList = spec.pinLabelsRight || [];
+                const maxPins = Math.max(leftList.length, rightList.length);
+                const stepY = (spec.h - 40) / Math.max(maxPins - 1, 1);
+
+                leftList.forEach((lbl, i) => {
+                    comp.pads.push({ relX: -spec.w / 2 + 10, relY: -spec.h / 2 + 30 + i * stepY, label: lbl });
+                });
+
+                rightList.forEach((lbl, i) => {
+                    comp.pads.push({ relX: spec.w / 2 - 10, relY: -spec.h / 2 + 30 + i * stepY, label: lbl });
+                });
+
+                if (spec.pinLabelsBottom) {
+                    const bList = spec.pinLabelsBottom;
+                    const stepX = (spec.w - 40) / Math.max(bList.length - 1, 1);
+                    bList.forEach((lbl, i) => {
+                        comp.pads.push({ relX: -spec.w / 2 + 20 + i * stepX, relY: spec.h / 2 - 10, label: lbl });
+                    });
+                }
+            } else {
+                const totalPins = spec.pins || 2;
+                const pinsPerSide = Math.ceil(totalPins / 2);
+                const stepY = (spec.h - 20) / Math.max(pinsPerSide - 1, 1);
+
+                for (let i = 0; i < pinsPerSide; i++) {
+                    comp.pads.push({ relX: -spec.w / 2 + 6, relY: -spec.h / 2 + 10 + i * stepY, label: `P${i+1}` });
+                    if (comp.pads.length < totalPins) {
+                        comp.pads.push({ relX: spec.w / 2 - 6, relY: -spec.h / 2 + 10 + i * stepY, label: `P${i+2}` });
+                    }
+                }
+            }
+
+            components.push(comp);
+            selectedComp = comp;
+            selectedWire = null;
+            updateInspector();
+            runDRCCheck();
+        }
+
+        function rotateSelected() {
+            if (selectedComp) {
+                selectedComp.rotation = (selectedComp.rotation + 90) % 360;
+                updateInspector();
+                draw();
+            }
+        }
+
+        function deleteSelected() {
+            if (selectedComp) {
+                components = components.filter(c => c !== selectedComp);
+                selectedComp = null;
+            } else if (selectedWire) {
+                wires = wires.filter(w => w !== selectedWire);
+                selectedWire = null;
+            }
+            updateInspector();
+            runDRCCheck();
+        }
+
+        function setMode(m) {
+            mode = m;
+            isWiring = false;
+            document.getElementById('btn-select').classList.toggle('active', m === 'select');
+            document.getElementById('btn-wire').classList.toggle('active', m === 'wire');
+        }
+
+        function exportGerber() {
+            let gerberData = "%FSLAX34Y34*%\n%MOIN*%\nG04 Capa Top Copper - OpenPCB EDA*%\n";
+            components.forEach((c, i) => {
+                gerberData += `G01 X${c.x * 100} Y${c.y * 100} D03*\n`;
+            });
+            const blob = new Blob([gerberData], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = "PCB_Top_Copper.gbr";
+            link.click();
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (mode === 'select') {
+                selectedComp = components.slice().reverse().find(c =>
+                    Math.abs(c.x - x) < c.w / 2 && Math.abs(c.y - y) < c.h / 2
+                );
+                selectedWire = selectedComp ? null : wires.find(w => Math.hypot(w.x1 - x, w.y1 - y) < 10);
+                updateInspector();
+            } else if (mode === 'wire') {
+                const targetX = activeSnapPad ? activeSnapPad.x : Math.round(x / GRID_SIZE) * GRID_SIZE;
+                const targetY = activeSnapPad ? activeSnapPad.y : Math.round(y / GRID_SIZE) * GRID_SIZE;
+
+                if (!isWiring) {
+                    wireStartPad = { x: targetX, y: targetY };
+                    isWiring = true;
+                } else {
+                    wires.push({ x1: wireStartPad.x, y1: wireStartPad.y, x2: targetX, y2: targetY, width: 4, layer: currentLayer, net: 'NET_001' });
+                    isWiring = false;
+                    wireStartPad = null;
+                    runDRCCheck();
+                }
+            }
+            draw();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mousePos.x = e.clientX - rect.left;
+            mousePos.y = e.clientY - rect.top;
+
+            document.getElementById('pos-info').innerText = `X: ${Math.round(mousePos.x)}, Y: ${Math.round(mousePos.y)}`;
+
+            activeSnapPad = findNearestPad(mousePos);
+
+            if (mode === 'select' && selectedComp && e.buttons === 1) {
+                selectedComp.x = Math.round(mousePos.x / GRID_SIZE) * GRID_SIZE;
+                selectedComp.y = Math.round(mousePos.y / GRID_SIZE) * GRID_SIZE;
+                runDRCCheck();
+            }
+            draw();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') rotateSelected();
+            if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+        });
+
+        function toggle3D() {
+            const view3D = document.getElementById('view-3d');
+            is3D = !is3D;
+            view3D.style.display = is3D ? 'block' : 'none';
+
+            if (is3D) {
+                view3D.innerHTML = '';
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x0a0a10);
+
+                const camera = new THREE.PerspectiveCamera(60, view3D.clientWidth / view3D.clientHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(view3D.clientWidth, view3D.clientHeight);
+                view3D.appendChild(renderer.domElement);
+
+                const controls = new THREE.OrbitControls(camera, renderer.domElement);
+                camera.position.set(0, -250, 300);
+                controls.update();
+
+                const pcbGeo = new THREE.BoxGeometry(canvas.width, canvas.height, 4);
+                const pcbMat = new THREE.MeshStandardMaterial({ color: 0x065f46, roughness: 0.3 });
+                const pcb = new THREE.Mesh(pcbGeo, pcbMat);
+                pcb.position.set(0, 0, -2);
+                scene.add(pcb);
+
+                const light = new THREE.DirectionalLight(0xffffff, 1.2);
+                light.position.set(100, 100, 200);
+                scene.add(light);
+                scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+                components.forEach(c => {
+                    const compGeo = new THREE.BoxGeometry(c.w, c.h, 12);
+                    const compMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+                    const compMesh = new THREE.Mesh(compGeo, compMat);
+                    
+                    const posX = c.x - canvas.width / 2;
+                    const posY = -(c.y - canvas.height / 2);
+                    compMesh.position.set(posX, posY, 6);
+                    compMesh.rotation.z = -(c.rotation || 0) * Math.PI / 180;
+                    scene.add(compMesh);
+                });
+
+                function animate() {
+                    if (!is3D) return;
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+                animate();
+            }
+        }
+
+        resizeCanvas();
+    </script>
+</body>
+</html>
